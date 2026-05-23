@@ -1,0 +1,59 @@
+# Unreal Engine - generated / cache / local
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+
+# Compiled objects
+*.o
+*.obj
+*.dll
+*.exe
+*.pdb
+*.lib
+*.a
+*.so
+*.dylib
+
+# Logs & crash reports
+*.log
+*.dmp
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE (optional local settings)
+.idea/
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+
+# Packaging / distribution
+*.pak
+*.ucas
+*.utoc
+
+# Local user settings (regenerated per machine)
+*.user
+*.userosscache
