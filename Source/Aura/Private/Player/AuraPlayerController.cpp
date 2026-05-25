@@ -44,6 +44,7 @@ void AAuraPlayerController::CursorTrace(){
         return;
     }
 }
+
 void AAuraPlayerController::BeginPlay()
 {
 	Super::BeginPlay();

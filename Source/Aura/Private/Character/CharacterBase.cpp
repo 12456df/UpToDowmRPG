@@ -3,7 +3,8 @@
 
 #include "Character/CharacterBase.h"
 #include "Components/SkeletalMeshComponent.h"
-
+#include "AbilitySystemComponent.h"
+#include "AttributeSet.h"
 ACharacterBase::ACharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -18,3 +19,6 @@ void ACharacterBase::BeginPlay()
 }
 
 
+UAbilitySystemComponent* ACharacterBase::GetAbilitySystemComponent() const{
+    return AbilitySystemComponent;
+}

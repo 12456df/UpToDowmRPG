@@ -16,9 +16,11 @@ class AURA_API AEnemy : public ACharacterBase, public IEnemyInterface
 	GENERATED_BODY()
 public:
 	AEnemy();
-
+	virtual void BeginPlay() override;
+	/**enemy Interface*/
 	virtual void HighlightActor() override;
 	virtual void UnhighlightActor() override;
+	/**end enemy Interface*/
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Highlighting")
