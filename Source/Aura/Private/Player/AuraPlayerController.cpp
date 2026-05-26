@@ -51,9 +51,11 @@ void AAuraPlayerController::BeginPlay()
     check(AuraContext);
     //拿到「当前这名本地玩家」专属的「增强输入子系统」
     UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
-    check(Subsystem);
-    //将「增强输入上下文」添加到「增强输入子系统」中
+   if(Subsystem){//将「增强输入上下文」添加到「增强输入子系统」中
+
     Subsystem->AddMappingContext(AuraContext, 0);
+    
+   }
 
     bShowMouseCursor = true;
     DefaultMouseCursor = EMouseCursor::Default;
