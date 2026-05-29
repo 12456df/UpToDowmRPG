@@ -20,6 +20,7 @@ public:
 	ACharacterBase();
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSet* GetAttributeSet() const{return AttributeSet;};
+	virtual void InitAbilityActorInfo();
 
 protected:
 	virtual void BeginPlay() override;
