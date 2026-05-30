@@ -23,6 +23,14 @@ public:
 	virtual void UnhighlightActor() override;
 	/**end enemy Interface*/
 
+	/*
+	*Combat Interface
+	*/
+	virtual int32 GetPlayerLevel() override;
+	/*
+	*End Combat Interface
+	*/
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "Highlighting")
 	TObjectPtr<UMaterialInterface> DefaultMaterial;
@@ -32,4 +40,8 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Highlighting")
 	bool bHighlighted = false;
+protected:
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Class Defaults")
+	int32 Level = 1;
 };

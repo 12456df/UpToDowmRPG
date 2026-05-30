@@ -5,14 +5,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
+#include "Interaction/CombatInterface.h"
 #include "CharacterBase.generated.h"
 
 class USkeletalMeshComponent;
 class UAbilitySystemComponent;
 class UAttributeSet;
+class UGameplayEffect;
 
 UCLASS(Abstract)
-class AURA_API ACharacterBase : public ACharacter, public IAbilitySystemInterface
+class AURA_API ACharacterBase : public ACharacter, public IAbilitySystemInterface,public ICombatInterface
 {
 	GENERATED_BODY()
 
@@ -21,6 +23,7 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSet* GetAttributeSet() const{return AttributeSet;};
 	virtual void InitAbilityActorInfo();
+	
 
 protected:
 	virtual void BeginPlay() override;
@@ -32,4 +35,20 @@ protected:
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY()
 	TObjectPtr<UAttributeSet> AttributeSet;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
+	TSubclassOf<UGameplayEffect> DefaultPrimaryAttributes;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
+	TSubclassOf<UGameplayEffect> DefaultSecondaryAttributes;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
+	TSubclassOf<UGameplayEffect> DefaultVitalAttributes;
+
+	/*
+	*使用GameplayEffect给角色初始化属性
+	*/
+	void ApplyEffectToSelf(const TSubclassOf<UGameplayEffect> GameplayEffectClass, const float Level) const;
+	void InitializeDefaultAttributes() const;
+
 };

@@ -41,3 +41,8 @@ void AEnemy::UnhighlightActor(){
 	Weapon->SetCustomDepthStencilValue(0);
     bHighlighted = false;
 }
+
+int32 AEnemy::GetPlayerLevel()
+{
+	return Level;
+}
