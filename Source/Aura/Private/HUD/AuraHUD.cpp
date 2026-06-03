@@ -5,7 +5,7 @@
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
-
+#include "UI/WidgetController/AttributeMenuWidgetController.h"
 
 UOverlayWidgetController* AAuraHUD::GetOverlayWidgetController(const FWidgetControllerParams& WCParams){
     if(OverlayWidgetController == nullptr){
@@ -16,12 +16,21 @@ UOverlayWidgetController* AAuraHUD::GetOverlayWidgetController(const FWidgetCont
 	return OverlayWidgetController;
 }
 
+UAttributeMenuWidgetController* AAuraHUD::GetAttributeMenuWidgetController(const FWidgetControllerParams& WCParams){
+    if(AttributeMenuWidgetController == nullptr){
+        AttributeMenuWidgetController = NewObject<UAttributeMenuWidgetController>(this, AttributeMenuWidgetControllerClass);
+        AttributeMenuWidgetController->SetWidgetControllerParams(WCParams);
+        AttributeMenuWidgetController->BindCallbacksToDependencies();
+    }
+	return AttributeMenuWidgetController;
+}
+
 void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAttributeSet* AS){
     
     /**查看蓝图中是否设置OverlayWidgetControllerClass和OverlayWidgetClass*/
     checkf(OverlayWidgetControllerClass, TEXT("OverlayWidgetControllerClass not found"));
     checkf(OverlayWidgetClass, TEXT("OverlayWidgetClass not found"));
-    
+
     /**创建OverlayWidget，并设置WidgetController，在这里WidgetController是OverlayWidgetController*/
     UUserWidget* Widget = CreateWidget<UAuraUserWidget>(GetWorld(), OverlayWidgetClass);
     OverlayWidget = Cast<UAuraUserWidget>(Widget);
