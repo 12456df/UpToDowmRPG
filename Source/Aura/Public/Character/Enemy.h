@@ -5,8 +5,11 @@
 #include "CoreMinimal.h"
 #include "Character/CharacterBase.h"
 #include "Interaction/EnemyInterface.h"
+#include "UI/WidgetController/OverlayWidgetController.h"
 #include "Enemy.generated.h"
 
+
+class UWidgetComponent;
 /**
  * 
  */
@@ -31,6 +34,12 @@ public:
 	*End Combat Interface
 	*/
 
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeChangedDelegateSignature OnHealthChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeChangedDelegateSignature OnMaxHealthChanged;
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "Highlighting")
 	TObjectPtr<UMaterialInterface> DefaultMaterial;
@@ -44,4 +53,7 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Character Class Defaults")
 	int32 Level = 1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UWidgetComponent> HealthBar;
 };

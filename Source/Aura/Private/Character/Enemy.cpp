@@ -2,28 +2,70 @@
 
 
 #include "Character/Enemy.h"
-#include "Aura/Aura.h"
-#include "AbilitySystemComponent.h"
-#include "AttributeSet.h"
+
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/AuraAttributeSet.h"
+#include "Components/WidgetComponent.h"
+#include "Aura/Aura.h"
+#include "UI/Widget/AuraUserWidget.h"
 AEnemy::AEnemy(){
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
-	AttributeSet = CreateDefaultSubobject<UAttributeSet>("AttributeSet");
+	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
+	HealthBar = CreateDefaultSubobject<UWidgetComponent>("HealthBar");
+	HealthBar->SetupAttachment(GetRootComponent());
 	
 }
 
 void AEnemy::BeginPlay(){
 	Super::BeginPlay();
 	InitAbilityActorInfo();
+
+	if (UAuraUserWidget* AuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
+	{
+		AuraUserWidget->SetWidgetController(this);
+	}
+	
+	if (const UAuraAttributeSet* AuraAS = Cast<UAuraAttributeSet>(AttributeSet))
+	{
+		/*
+		委托1：FOnGameplayAttributeValueChange
+			声明类型：引擎 AbilitySystemComponent.h 里用宏声明（FOnGameplayAttributeValueChange）
+			创建实例：ASC 内部为每个 Attribute 维护一个，GetGameplayAttributeValueChangeDelegate(Attribute) 把它取出来
+			绑定监听：.AddLambda([this](const FOnAttributeChangeData& Data){...})
+			广播触发：当 Health 属性被 GE 改变时，ASC 自动 Broadcast，从而调用你的 lambda
+		委托2：FOnAttributeChangedDelegateSignature
+			声明类型：OverlayWidgetController.h 第33行 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedDelegateSignature, float, NewValue)
+			创建实例：Enemy.h：FOnAttributeChangedDelegateSignature OnHealthChanged;
+			绑定监听：UI 血条蓝图（WBP_EnemyHealthBar）里绑定 OnHealthChanged
+			广播触发：OnHealthChanged.Broadcast(Data.NewValue)
+		*/
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAS->GetHealthAttribute()).AddLambda(
+			[this, AuraAS](const FOnAttributeChangeData& /*Data*/)
+			{
+				OnHealthChanged.Broadcast(AuraAS->GetHealth());
+			}
+		);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAS->GetMaxHealthAttribute()).AddLambda(
+			[this, AuraAS](const FOnAttributeChangeData& /*Data*/)
+			{
+				OnMaxHealthChanged.Broadcast(AuraAS->GetMaxHealth());
+			}
+		);
+
+		OnHealthChanged.Broadcast(AuraAS->GetHealth());
+		OnMaxHealthChanged.Broadcast(AuraAS->GetMaxHealth());
+	}
 }
 
 void AEnemy::InitAbilityActorInfo(){
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->AbilityActorInfoSet();
+
+	InitializeDefaultAttributes();
 }
 
 void AEnemy::HighlightActor(){
@@ -46,3 +88,16 @@ int32 AEnemy::GetPlayerLevel()
 {
 	return Level;
 }
+
+/*
+Q1：给 BP_EnemyBase 加了 WidgetComponent（HealthBar）后，PIE 里 client 和 server 头顶都看不到血条。
+A1：HealthBar 组件的 Space 被设成了 World（世界空间）。World 空间的 widget 是 3D 面片，
+会因为背对相机（背面剔除）、距离缩小、被网格遮挡、受光照影响等原因变得看不见。
+S1：把 HealthBar 组件的 Space 改成 Screen（屏幕空间）。
+Screen 空间永远正对相机、永远在最上层、大小固定——这正是头顶血条的标准设置。
+
+Q2：火球命中敌人，PostGameplayEffectExecute 确实触发，
+日志显示 magnitude = -10，但 GetHealth() 始终是 106.5，血量和血条都不变。
+A2：DefaultVitalAttributes（设置 Health 的 GE）的 Duration Policy 被设成了 Infinite，而不是 Instant。
+S2：把 Duration Policy 改成 Instant。
+*/

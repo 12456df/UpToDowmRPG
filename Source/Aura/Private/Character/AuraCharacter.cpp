@@ -25,11 +25,13 @@ void AAuraCharacter::PossessedBy(AController* NewController){
     Super::PossessedBy(NewController);
     /**init on server*/
     InitAbilityActorInfo();
+    AddCharacterAbilities();
 }
 void AAuraCharacter::OnRep_Controller(){
     Super::OnRep_Controller();
     /**init on client*/
     InitAbilityActorInfo();
+    
 }
 
 void AAuraCharacter::InitAbilityActorInfo()

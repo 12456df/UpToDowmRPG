@@ -1,0 +1,77 @@
+# ============================================================
+# Cursor Ignore for Unreal Engine 5 Project (Aura)
+# Files listed here are fully ignored by Cursor:
+#   not indexed, not visible to @Files, not used as AI context.
+# ============================================================
+
+# --- UE auto-generated directories (huge & useless for AI) ---
+Binaries/
+Intermediate/
+DerivedDataCache/
+Saved/
+Build/
+
+# --- IDE / tooling caches ---
+.idea/
+.vs/
+.vscode/
+*.suo
+*.sdf
+*.opensdf
+*.user
+*.VC.db
+*.VC.opendb
+
+# --- UE binary assets (AI cannot read them) ---
+*.uasset
+*.umap
+*.uexp
+*.ubulk
+*.upk
+*.udk
+
+# --- Content folder (all binary assets) ---
+# Comment out the next line if you want AI to see asset paths.
+Content/
+
+# --- Source media (if any committed) ---
+*.png
+*.jpg
+*.jpeg
+*.tga
+*.bmp
+*.psd
+*.fbx
+*.obj
+*.wav
+*.mp3
+*.ogg
+*.ttf
+*.otf
+
+# --- Compiled binaries / libs ---
+*.exe
+*.dll
+*.lib
+*.pdb
+*.so
+*.dylib
+*.a
+
+# --- Archives ---
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+
+# --- VS / Rider project generation outputs ---
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# --- Logs / temp ---
+*.log
+*.tmp
+*.bak

@@ -1,0 +1,153 @@
+---
+description: 
+alwaysApply: true
+---
+
+# Aura Project Rules (UE 5.2)
+
+This is an Unreal Engine **5.2** C++ project built around the **Gameplay Ability System (GAS)**, **Enhanced Input**, and a custom **WidgetController** UI pattern. Follow all conventions below when generating or editing code.
+
+---
+
+## 1. Engine & Module
+
+- Target engine: **Unreal Engine 5.2** (do NOT use 5.3+ only APIs such as `UE::Math` migrations introduced later, the new `FAppStyle` paths only added in 5.3, or 5.4 ChooserTable, etc.).
+- Primary game module: `Aura` (see `Source/Aura/Aura.Build.cs`).
+- Public dependencies already wired: `Core`, `CoreUObject`, `Engine`, `InputCore`, `EnhancedInput`, `GameplayAbilities`, `UMG`.
+- Private dependencies: `GameplayTags`, `GameplayTasks`, `NavigationSystem`, `Niagara`.
+- If new functionality needs another module (e.g. `Slate`, `AIModule`, `OnlineSubsystem`), add it to `Aura.Build.cs` explicitly and mention it in the response.
+
+## 2. File Layout
+
+```
+Source/Aura/
+  Public/
+    AbilitySystem/
+      Abilities/          AuraGameplayAbility, AuraProjectileSpell, ...
+      AbilityTasks/       TargetDataUnderMouse, ...
+      Data/               AttributeInfo, ...
+      ModMagCalc/         MMC_MaxHealth, MMC_MaxMana
+      AuraAbilitySystemComponent.h
+      AuraAttributeSet.h
+      AuraAbilitySystemLibrary.h
+    Actor/                AuraProjectile, AuraEffectActor
+    Character/            CharacterBase, AuraCharacter, Enemy
+    Game/                 AuraGameModeBase
+    HUD/                  AuraHUD
+    Input/                AuraInputComponent, AuraInputConfig
+    Interaction/          CombatInterface, EnemyInterface
+    Player/               AuraPlayerController, AuraPlayerState
+    UI/
+      Widget/             AuraUserWidget, ...
+      WidgetController/   AuraWidgetController, OverlayWidgetController, AttributeMenuWidgetController
+    AuraAssetManager.h
+    AuraGameplayTags.h
+  Private/                mirrors Public/
+```
+
+- New classes must be placed in the matching subfolder. `.h` in `Public/<dir>/`, `.cpp` in `Private/<dir>/`.
+- One UCLASS per file. Filename matches class name without the prefix (`UAuraAttributeSet` -> `AuraAttributeSet.h/.cpp`).
+
+## 3. Naming Conventions
+
+- `A` prefix: Actors (`AAuraCharacter`, `AAuraProjectile`).
+- `U` prefix: UObjects / components (`UAuraAbilitySystemComponent`, `UAuraUserWidget`).
+- `F` prefix: structs (`FGameplayTagContainer`, `FEffectProperties`).
+- `E` prefix: enums (`EAuraAbilityType`).
+- `I` prefix: interfaces (`ICombatInterface`, `IEnemyInterface`).
+- Project-specific prefixes for assets / classes (already in use):
+  - `Aura...` for engine extensions (`UAuraAttributeSet`).
+  - `GA_` Blueprint Gameplay Abilities, `GE_` Gameplay Effects, `MMC_` Modifier Magnitude Calculations.
+  - `IA_` Input Actions, `IMC_` Input Mapping Contexts, `DA_` Data Assets.
+  - `BP_` Blueprints, `WBP_` Widget Blueprints, `AM_` Anim Montages, `AN_` Anim Notifies.
+
+## 4. C++ Style
+
+- `#pragma once` at the top of every header.
+- IWYU-compliant includes. The **first include** of any `.cpp` is its own header. Then `CoreMinimal.h`-style minimal includes — prefer specific headers over big umbrella ones.
+- Use `UPROPERTY()` / `UFUNCTION()` for any member that needs reflection, replication, GC tracking, or BP exposure. Without it, `UObject*` members will be garbage-collected unpredictably.
+- For UObject pointer members in UCLASSes, prefer `TObjectPtr<T>` over raw `T*` (UE5 standard). Keep raw pointers for local/temporary vars only.
+- No narrative comments. Comments only when intent is non-obvious (trade-offs, ordering constraints, GAS prediction caveats).
+- Use `UE_LOG(LogTemp, Warning/Error/Display, TEXT("..."))` only for temporary debugging. For lasting logs, declare a project category in `Aura.h` (the project already has `Aura.h` set up for this).
+- Logging macros: `print(string)` and `printf(format, ...)` style — prefer `UE_LOG` over `GEngine->AddOnScreenDebugMessage` except for transient on-screen debug.
+
+## 5. Gameplay Ability System (GAS)
+
+This project is GAS-heavy. When touching ability/attribute/effect code:
+
+- Attribute setters/getters: use the GAS macros from `AttributeSet.h`:
+  ```cpp
+  ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Health)
+  ```
+  Always declare `FGameplayAttributeData` properties with `ReplicatedUsing = OnRep_<Name>`, and implement an `OnRep_<Name>` that calls `GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, <Name>, OldValue)`.
+- Register replicated attributes in `GetLifetimeReplicatedProps` with `DOREPLIFETIME_CONDITION_NOTIFY(..., COND_None, REPNOTIFY_Always)`.
+- New AttributeSet attributes must be added to `UAuraAttributeSet` and also surfaced through `AttributeInfo` data assets for the UI menu.
+- Gameplay Abilities inherit from `UAuraGameplayAbility` (not directly from `UGameplayAbility`). Projectile spells inherit from `UAuraProjectileSpell`.
+- Gameplay Effects: prefer Blueprint authoring under `Content/Blueprints/AbilitySystem/GameplayEffects/`. In C++ only build infrastructure (MMCs, ExecCalcs, custom GameplayCues).
+- Use `FGameplayTag` everywhere, not raw FName/FString tags. All project tags are declared in `AuraGameplayTags.h/.cpp` via `FAuraGameplayTags::InitializeNativeGameplayTags()`. Reference with `FAuraGameplayTags::Get().Tag_Name`.
+- Ability tasks (`UAbilityTask_*`) live under `AbilitySystem/AbilityTasks/`. Follow the `TargetDataUnderMouse` pattern: `static` factory, broadcast a `FOnXxxDelegate` from `Activate()`, end via `EndTask()`.
+
+## 6. Enhanced Input
+
+- Input is driven by `IA_*` (InputAction) + `IMC_AuraContext` + `DA_AuraInputConfig` (a `UAuraInputConfig` DataAsset).
+- Bindings happen in `UAuraInputComponent::BindAbilityActions(...)` — a templated helper that wires tag-based ability inputs in one call. Do not add per-action `BindAction` calls in the PlayerController.
+- New ability inputs:
+  1. Create `IA_<Name>` asset.
+  2. Add an entry to `DA_AuraInputConfig` (InputAction + matching GameplayTag).
+  3. The PlayerController auto-binds it via `AuraInputComponent`.
+
+## 7. UI (WidgetController pattern)
+
+- Widgets (`UAuraUserWidget` and children) are **passive**. They never read game state directly.
+- A `UAuraWidgetController` (`OverlayWidgetController`, `AttributeMenuWidgetController`, ...) sits between the widget and the model:
+  - Constructed by `AAuraHUD` once `PlayerController`, `PlayerState`, `AbilitySystemComponent`, `AttributeSet` are all valid.
+  - Exposes `FOnAttributeChangedSignature`-style multicast delegates the widget binds to in BP.
+- When adding a new HUD element: extend the appropriate WidgetController (or create a new one + register in HUD), expose a delegate, do NOT poke `GetWorld()->GetPlayerController()` from the widget.
+
+## 8. Combat / Interfaces
+
+- Cross-class combat operations go through `ICombatInterface` (e.g. `GetCombatSocketLocation`, `UpdateFacingTarget`).
+- Mouse-target highlight uses `IEnemyInterface` (`HighlightActor` / `UnHighlightActor`).
+- When a class needs to participate in combat or be targetable, **implement the interface** rather than checking concrete types with `Cast<>`.
+
+## 9. Replication & Networking
+
+- This project uses standard client/server replication (listen-server friendly). Always think about authority when modifying state.
+- `AbilitySystemComponent` is created on `APlayerState` for `AAuraCharacter` (player), and on the pawn itself for `AEnemy`. Mirror this when adding new ASC owners.
+- Abilities should set their `NetExecutionPolicy` deliberately (default for spells: `LocalPredicted`). Use `WaitTargetData` / `TargetDataUnderMouse` to keep targeting client-authoritative but server-validated.
+- Replicated UPROPERTYs need `Replicated` (or `ReplicatedUsing=`) plus a `DOREPLIFETIME` entry in `GetLifetimeReplicatedProps`.
+
+## 10. Assets & Async Loading
+
+- Custom asset manager: `UAuraAssetManager` (already set in `Config/DefaultEngine.ini` via `AssetManagerClassName`).
+- Native gameplay tags are bootstrapped in `UAuraAssetManager::StartInitialLoading()` -> `FAuraGameplayTags::InitializeNativeGameplayTags()`. Any new native tag goes there.
+- For ability/effect/asset data, prefer `UDataAsset` subclasses (`UAuraInputConfig`, `UAttributeInfo`) loaded via `TObjectPtr<UMyDataAsset>` UPROPERTY rather than hard string paths.
+
+## 11. Niagara / VFX
+
+- Project depends on `Niagara`. Spawn VFX via `UNiagaraFunctionLibrary::SpawnSystemAtLocation/AttachedTo` — never via `UGameplayStatics` particle helpers (those are Cascade).
+- Hit VFX, impact effects, and ability cues should be triggered via `GameplayCue` whenever possible so they replicate cleanly and respect cosmetic-only network policy.
+
+## 12. What NOT to Do
+
+- Do NOT add Blueprint-only logic in C++ stubs without `UFUNCTION(BlueprintCallable/BlueprintImplementableEvent)` markings.
+- Do NOT use `TWeakObjectPtr` for normal owning references — prefer `TObjectPtr` with `UPROPERTY`.
+- Do NOT call `GetWorld()->SpawnActor` for projectiles directly from abilities — go through the ability's `SpawnProjectile` helper or `UAuraProjectileSpell::SpawnProjectile`.
+- Do NOT hardcode key bindings — go through `IMC_AuraContext` + `DA_AuraInputConfig`.
+- Do NOT mix Cascade and Niagara; this project is Niagara-only.
+- Do NOT include `GameplayAbilitiesModule.h` or other private GAS headers; use public headers like `AbilitySystemComponent.h`, `AbilitySystemGlobals.h`, `GameplayEffect.h`, `GameplayEffectExtension.h`.
+
+## 13. When in Doubt
+
+- Read the closest existing class first; mirror its style and patterns. The codebase is small and very consistent — new code should be indistinguishable from the existing files.
+- For GAS-specific questions, defer to the patterns already in `AuraAttributeSet.cpp`, `AuraAbilitySystemComponent.cpp`, and `AuraProjectileSpell.cpp`.
+- For UI questions, defer to `OverlayWidgetController.cpp` / `AttributeMenuWidgetController.cpp`.
+
+
+## 14. Local Documentation Reference
+
+Authoritative GAS documentation is mirrored at `.docs/GAS-Tranek-Documentation.md` (Tranek's GASDocumentation, the de-facto standard reference for the Gameplay Ability System).
+
+When answering GAS-related questions (AttributeSet, GameplayEffect, GameplayCue, prediction, replication, ability tasks, ASC ownership, etc.), prefer information from `.docs/GAS-Tranek-Documentation.md` over generic knowledge. If unsure, cite the relevant section.
+
+For UE 5.2-specific API behavior not covered by Tranek, defer to the existing patterns in `Source/Aura/` first, then fall back to general UE 5.2 knowledge.
