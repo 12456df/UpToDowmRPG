@@ -2,7 +2,7 @@
 
 
 #include "Character/Enemy.h"
-
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Components/WidgetComponent.h"
@@ -68,6 +68,11 @@ void AEnemy::InitAbilityActorInfo(){
 	InitializeDefaultAttributes();
 }
 
+void AEnemy::InitializeDefaultAttributes() const
+{
+	UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, CharacterClass, Level, AbilitySystemComponent);
+}
+
 void AEnemy::HighlightActor(){
 	GetMesh()->SetRenderCustomDepth(true);
 	GetMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_RED);
@@ -76,7 +81,7 @@ void AEnemy::HighlightActor(){
     bHighlighted = true;
 }
 
-void AEnemy::UnhighlightActor(){
+void AEnemy::UnHighlightActor(){
 	GetMesh()->SetRenderCustomDepth(false);
 	GetMesh()->SetCustomDepthStencilValue(0);
 	Weapon->SetRenderCustomDepth(false);

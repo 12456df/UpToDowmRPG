@@ -53,8 +53,8 @@ protected:
 	*使用GameplayEffect给角色初始化属性
 	*/
 	void ApplyEffectToSelf(const TSubclassOf<UGameplayEffect> GameplayEffectClass, const float Level) const;
-	void InitializeDefaultAttributes() const;
-
+	virtual void InitializeDefaultAttributes() const;
+	
 	void AddCharacterAbilities();
 private:
 	UPROPERTY(EditAnywhere, Category = "Abilities")
