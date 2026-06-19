@@ -27,4 +27,17 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static void InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC);
+
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|CharacterClassDefaults")
+	static void GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC);
+
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|CharacterClassDefaults")
+	static UCharacterClassInfo* GetCharacterClassInfo(const UObject* WorldContextObject);
 };
+
+
+/*
+Q1:为什么要采用AuraAbilitySystemLibrary？为什么继承UBlueprintFunctionLibrary？
+A1:继承它之后，里面的 UFUNCTION(BlueprintCallable) 静态函数会被引擎识别为全局蓝图节点——在蓝图里任何地方右键搜索就能直接调用，
+不需要先拿到某个对象的引用。
+*/

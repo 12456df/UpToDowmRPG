@@ -57,3 +57,6 @@ $RECYCLE.BIN/
 # Local user settings (regenerated per machine)
 *.user
 *.userosscache
+
+# Doxygen generated docs
+Docs/Doxygen/

@@ -10,6 +10,7 @@
 #include "Game/AuraGameModeBase.h"
 #include "Player/AuraPlayerState.h"
 #include "HUD/AuraHUD.h"
+#include "AbilitySystem/Data/CharacterClassInfo.h"
 
 UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(const UObject* WorldContextObject)
 {
@@ -45,12 +46,10 @@ UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidge
 
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC)
 {
-	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));//通过enemy获得gamemode实例
-	if (AuraGameMode == nullptr) return;
-
+	
 	AActor* AvatarActor = ASC->GetAvatarActor();
-
-	UCharacterClassInfo* CharacterClassInfo = AuraGameMode->CharacterClassInfo;
+	UCharacterClassInfo* CharacterClassInfo = GetCharacterClassInfo(WorldContextObject);
+	if(!CharacterClassInfo) return;
 	FCharacterClassDefaultInfo ClassDefaultInfo = CharacterClassInfo->GetClassDefaultInfo(CharacterClass);//使用CharacterClassInfo的内置函数GetClassDefaultInfo(ECharacterClass CharacterClass)获取CharacterClassDefaultInfo
 	
 	FGameplayEffectContextHandle PrimaryAttributesContextHandle = ASC->MakeEffectContext();
@@ -68,3 +67,65 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 	const FGameplayEffectSpecHandle VitalAttributesSpecHandle = ASC->MakeOutgoingSpec(CharacterClassInfo->VitalAttributes, Level, VitalAttributesContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*VitalAttributesSpecHandle.Data.Get());
 }
+
+void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC)
+{
+	UCharacterClassInfo* CharacterClassInfo = GetCharacterClassInfo(WorldContextObject);
+	if(!CharacterClassInfo) return;
+	for (TSubclassOf<UGameplayAbility> AbilityClass : CharacterClassInfo->CommonAbilities)
+	{
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
+		ASC->GiveAbility(AbilitySpec);
+	}
+}
+
+UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
+{
+	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	if (AuraGameMode == nullptr) return nullptr;
+	return AuraGameMode->CharacterClassInfo;
+}
+
+/*
+Q1:WorldContextObject 是什么
+A1:WorldContextObject 不是"因为 UObject 是 Character 的父类"所以能传。它的含义是："帮我找到你所在的 World（世界）"。
+
+UE 里很多全局函数（GetGameMode、GetPlayerController、SpawnActor 等）需要知道"在哪个世界里操作"。但静态函数没有 this，不属于任何 Actor，所以需要借一个身处那个世界的对象来定位 World。
+
+引擎内部大致是这样拿 World 的：
+UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject);
+所以它不在乎你传的是 Character、Actor 还是 Widget——只要这个对象能找到一个 UWorld，就行。你传 this（Enemy），Enemy 在世界里，自然能找到 World。传 PlayerController、GameState 也都可以。
+
+在蓝图里，继承 UBlueprintFunctionLibrary 的函数如果第一个参数叫 WorldContextObject，引擎会自动帮你填上，蓝图里看不到这个引脚——这就是为什么蓝图调用时不需要手动连。
+--------------------------------
+Q2:Enemy 为什么能拿到 AuraGameModeBase
+A2:AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+GetGameMode 不是 Enemy 的函数，是引擎的全局函数。它的逻辑是：
+WorldContextObject（Enemy）→ 找到 World → World 里有唯一的 GameMode → 返回它
+GameMode 是整个关卡的"规则管理者"，任何在这个 World 里的对象都能通过 GetGameMode 拿到它。跟谁调用无关——Enemy 能拿到，PlayerController 也能拿到，一个 Widget 也能拿到。
+
+注意：GameMode 只存在于 Server 端。如果这个函数在 Client 上调用，GetGameMode 返回 null。这也是为什么代码里有 if (AuraGameMode == nullptr) return; 的保护。敌人初始化属性只在 Server 跑，所以没问题。
+--------------------------------
+Q3:GE 标准应用流程（MakeEffectContext → MakeOutgoingSpec → Apply）
+A3:
+第一步：MakeEffectContext —— "谁造成的"
+FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
+Context.AddSourceObject(AvatarActor);
+
+创建一个上下文对象，记录"这次效果的来源是谁"。AddSourceObject 把 AvatarActor（敌人自己）标记为来源。
+为什么需要：GE 执行时（比如在 PostGameplayEffectExecute 里），你能通过 Context 反查"是谁施加的这个效果"。
+
+第二步：MakeOutgoingSpec —— "做什么 + 等级多少"
+const FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(GEClass, Level, Context);
+
+把三样东西打包成一份规格单（Spec）：
+GEClass：用哪个 GE（图纸）
+Level：等级（影响 Scalable Float 的曲线取值）
+Context：上一步做的上下文
+为什么不直接 Apply 一个 GE 类：因为同一个 GE 类可能被不同等级、不同来源使用。Spec 是"一次具体的使用"，GE 类是"通用模板"。
+
+第三步：ApplyGameplayEffectSpecToSelf —— "作用到谁身上"
+ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+把规格单真正执行到 ASC 身上，修改属性。
+ToSelf 表示"施加到自己"——因为这里是敌人初始化自己的属性，来源和目标是同一个 ASC。如果是火球打别人，用的是 TargetASC->ApplyGameplayEffectSpecToSelf（在目标的 ASC 上调用）。
+*/

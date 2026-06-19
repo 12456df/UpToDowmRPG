@@ -1,0 +1,80 @@
+# Doxygen 配置文件 - Aura 项目
+# 使用方法：在项目根目录运行 doxygen Doxyfile
+
+#---------------------------------------------------------------------------
+# 项目信息
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "Aura"
+PROJECT_BRIEF          = "GAS Action RPG Project"
+OUTPUT_DIRECTORY       = Docs/Doxygen
+
+#---------------------------------------------------------------------------
+# 输入源
+#---------------------------------------------------------------------------
+INPUT                  = Source/Aura
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.cpp
+EXCLUDE_PATTERNS       = */Intermediate/* */Binaries/* */ThirdParty/*
+
+#---------------------------------------------------------------------------
+# 提取设置
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+
+#---------------------------------------------------------------------------
+# 预处理（让 Doxygen 认识 UE 宏）
+#---------------------------------------------------------------------------
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = \
+    UCLASS(...)= \
+    USTRUCT(...)= \
+    UENUM(...)= \
+    UPROPERTY(...)= \
+    UFUNCTION(...)= \
+    GENERATED_BODY()= \
+    GENERATED_USTRUCT_BODY()= \
+    DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(...)= \
+    DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(...)= \
+    DECLARE_DYNAMIC_MULTICAST_DELEGATE(...)= \
+    DECLARE_MULTICAST_DELEGATE_OneParam(...)= \
+    DECLARE_DELEGATE_RetVal(...)= \
+    AURA_API= \
+    TEXT(x)=x \
+    FORCEINLINE=inline
+
+#---------------------------------------------------------------------------
+# 图表生成（需要 Graphviz）
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_PATH               =
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+GRAPHICAL_HIERARCHY    = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+DOT_GRAPH_MAX_NODES    = 100
+
+#---------------------------------------------------------------------------
+# 输出格式
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+SEARCHENGINE           = YES
+
+#---------------------------------------------------------------------------
+# 源码浏览
+#---------------------------------------------------------------------------
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
