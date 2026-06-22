@@ -9,6 +9,8 @@
 
 
 class UWidgetComponent;
+class UBehaviorTree;
+class AAuraAIController;
 /**
  * 
  */
@@ -18,6 +20,8 @@ class AURA_API AEnemy : public ACharacterBase, public IEnemyInterface
 	GENERATED_BODY()
 public:
 	AEnemy();
+	virtual void PossessedBy(AController* NewController) override;
+
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo() override;
 	
@@ -72,4 +76,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
 	ECharacterClass CharacterClass = ECharacterClass::Warrior;
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+	TObjectPtr<UBehaviorTree> BehaviorTree;
+
+	UPROPERTY()
+	TObjectPtr<AAuraAIController> AuraAIController;
 };
