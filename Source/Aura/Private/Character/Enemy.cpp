@@ -50,7 +50,7 @@ void AEnemy::BeginPlay(){
 	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 	if(HasAuthority())
 	{
-		UAuraAbilitySystemLibrary::GiveStartupAbilities(this, AbilitySystemComponent);
+		UAuraAbilitySystemLibrary::GiveStartupAbilities(this, AbilitySystemComponent, CharacterClass);
 	}
 
 	if (UAuraUserWidget* AuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
@@ -134,6 +134,14 @@ void AEnemy::Die()
 	SetLifeSpan(LifeSpan);
 	Super::Die();
 }
+
+void AEnemy::SetCombatTarget_Implementation(AActor* inCombatTarget)
+{
+	CombatTarget = inCombatTarget;
+}
+AActor* AEnemy::GetCombatTarget_Implementation(){
+	return CombatTarget;
+}
 void AEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
 {
 	if(NewCount > 0)
@@ -146,7 +154,11 @@ void AEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
 		bHitReacting = false;
 		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 	}
-	AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), bHitReacting);
+	
+	if (AuraAIController && AuraAIController->GetBlackboardComponent())
+	{
+		AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), bHitReacting);
+	}
 	
 }
 

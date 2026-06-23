@@ -10,6 +10,7 @@
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Components/CapsuleComponent.h"
 #include "Aura/Aura.h"
+#include "AuraGameplayTags.h"
 ACharacterBase::ACharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -61,6 +62,7 @@ void ACharacterBase::MulticastHandleDeath_Implementation()
 	
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Dissolve();
+	bDead = true;
 }
 
 void ACharacterBase::ApplyEffectToSelf(const TSubclassOf<UGameplayEffect> GameplayEffectClass, const float Level) const
@@ -80,15 +82,44 @@ void ACharacterBase::InitializeDefaultAttributes() const
 	ApplyEffectToSelf(DefaultVitalAttributes, 1.f);
 }
 
-FVector ACharacterBase::GetCombatSocketLocation()
+FVector ACharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag)
 {
-	check(Weapon);
-	return Weapon->GetSocketLocation(WeaponTipSocketName);
+	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+	if(MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_Weapon))
+	{
+		return Weapon->GetSocketLocation(WeaponTipSocketName);
+	}
+	if(MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_LeftHand))
+	{
+		return GetMesh()->GetSocketLocation(LeftHandSocketName);
+	}
+	if(MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_RightHand))
+	{
+		return GetMesh()->GetSocketLocation(RightHandSocketName);
+	}
+	return FVector::ZeroVector;
 }
 
 UAnimMontage* ACharacterBase::GetHitReactMontage_Implementation()
 {
 	return HitReactMontage;
+}
+
+
+
+bool ACharacterBase::IsDead_Implementation() const
+{
+	return bDead;
+}
+
+AActor* ACharacterBase::GetAvatar_Implementation()
+{
+	return this;
+}
+
+TArray<FTaggedMontage> ACharacterBase::GetAttackMontages_Implementation()
+{
+	return AttackMontages;
 }
 
 void ACharacterBase::AddCharacterAbilities()
