@@ -156,7 +156,8 @@ bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* Actor1, const AActor* 
 {
 	bool bBothEnemy = Actor1->ActorHasTag(FName("Enemy")) && Actor2->ActorHasTag(FName("Enemy"));
 	bool bBothPlayer = Actor1->ActorHasTag(FName("Player")) && Actor2->ActorHasTag(FName("Player"));
-	return bBothEnemy || bBothPlayer;
+	bool bFriend = bBothEnemy || bBothPlayer;
+	return !bFriend;
 }
 /*
 Q1:WorldContextObject 是什么
