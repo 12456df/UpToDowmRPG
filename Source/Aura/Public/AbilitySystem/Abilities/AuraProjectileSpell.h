@@ -11,7 +11,7 @@
  */
 class AAuraProjectile;
 class UGameplayEffect;
-
+struct FGameplayTag;
 UCLASS()
 class AURA_API UAuraProjectileSpell : public UAuraDamageGameplayAbility//继承自AuraDamageGameplayAbility
 {
@@ -21,7 +21,7 @@ protected:
 
 
 	UFUNCTION(BlueprintCallable)
-	void SpawnProjectile(const FVector& ProjectileTargetLocation);
+	void SpawnProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& SocketTag,bool bOverridePitch = false,float OverridePitch = 0.f);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<AAuraProjectile> ProjectileClass;
