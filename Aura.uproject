@@ -35,10 +35,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "UE_MCP_Bridge",
-			"Enabled": false
-		},
-		{
 			"Name": "MotionWarping",
 			"Enabled": true
 		}
