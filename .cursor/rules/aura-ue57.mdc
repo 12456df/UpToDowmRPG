@@ -1,0 +1,147 @@
+---
+description: Aura project conventions for Unreal Engine 5.7
+alwaysApply: true
+---
+
+# Aura Project Rules (UE 5.7)
+
+This is an Unreal Engine **5.7** C++ project built around the **Gameplay Ability System (GAS)**, **Enhanced Input**, and a custom **WidgetController** UI pattern. Follow all conventions below when generating or editing code.
+
+**Project facts (engine, plugins, class names):** `AGENTS.md` and `.agents/ue-project-context.md` — do not duplicate here.
+
+---
+
+## 1. Engine & Module
+
+- Target engine: **Unreal Engine 5.7**. Do not target 5.2-era APIs or workarounds superseded in later versions.
+- `Aura.Target.cs` / `AuraEditor.Target.cs` use `BuildSettingsVersion.V6` and `IncludeOrderVersion.Latest`.
+- Primary game module: `Aura` (see `Source/Aura/Aura.Build.cs`).
+- Public dependencies already wired: `Core`, `CoreUObject`, `Engine`, `InputCore`, `EnhancedInput`, `GameplayAbilities`, `UMG`.
+- Private dependencies: `GameplayTags`, `GameplayTasks`, `NavigationSystem`, `Niagara`, `AIModule`.
+- If new functionality needs another module (e.g. `Slate`, `OnlineSubsystem`), add it to `Aura.Build.cs` explicitly and mention it in the response.
+- Editor automation: use **UEC MCP** (`uecp-aura`) for blueprints/assets/levels; C++ stays in Cursor.
+
+## 2. File Layout
+
+```
+Source/Aura/
+  Public/
+    AbilitySystem/
+      Abilities/          AuraGameplayAbility, AuraProjectileSpell, ...
+      AbilityTasks/       TargetDataUnderMouse, ...
+      Data/               AttributeInfo, ...
+      ModMagCalc/         MMC_MaxHealth, MMC_MaxMana
+      AuraAbilitySystemComponent.h
+      AuraAttributeSet.h
+      AuraAbilitySystemLibrary.h
+    Actor/                AuraProjectile, AuraEffectActor
+    Character/            CharacterBase, AuraCharacter, Enemy
+    Game/                 AuraGameModeBase
+    HUD/                  AuraHUD
+    Input/                AuraInputComponent, AuraInputConfig
+    Interaction/          CombatInterface, EnemyInterface
+    Player/               AuraPlayerController, AuraPlayerState
+    UI/
+      Widget/             AuraUserWidget, ...
+      WidgetController/   AuraWidgetController, OverlayWidgetController, AttributeMenuWidgetController
+    AuraAssetManager.h
+    AuraGameplayTags.h
+  Private/                mirrors Public/
+```
+
+- New classes must be placed in the matching subfolder. `.h` in `Public/<dir>/`, `.cpp` in `Private/<dir>/`.
+- One UCLASS per file. Filename matches class name without the prefix (`UAuraAttributeSet` -> `AuraAttributeSet.h/.cpp`).
+
+## 3. Naming Conventions
+
+- `A` prefix: Actors (`AAuraCharacter`, `AAuraProjectile`).
+- `U` prefix: UObjects / components (`UAuraAbilitySystemComponent`, `UAuraUserWidget`).
+- `F` prefix: structs (`FGameplayTagContainer`, `FEffectProperties`).
+- `E` prefix: enums (`EAuraAbilityType`).
+- `I` prefix: interfaces (`ICombatInterface`, `IEnemyInterface`).
+- Project-specific prefixes for assets / classes (already in use):
+  - `Aura...` for engine extensions (`UAuraAttributeSet`).
+  - `GA_` Blueprint Gameplay Abilities, `GE_` Gameplay Effects, `MMC_` Modifier Magnitude Calculations.
+  - `IA_` Input Actions, `IMC_` Input Mapping Contexts, `DA_` Data Assets.
+  - `BP_` Blueprints, `WBP_` Widget Blueprints, `AM_` Anim Montages, `AN_` Anim Notifies.
+
+## 4. C++ Style
+
+- `#pragma once` at the top of every header.
+- IWYU-compliant includes. The **first include** of any `.cpp` is its own header. Then minimal specific headers — not umbrella includes.
+- Use `UPROPERTY()` / `UFUNCTION()` for any member that needs reflection, replication, GC tracking, or BP exposure.
+- For UObject pointer members in UCLASSes, prefer `TObjectPtr<T>` over raw `T*`.
+- No narrative comments. Comments only when intent is non-obvious.
+- Prefer `UE_LOG` with a project log category over `GEngine->AddOnScreenDebugMessage` except for transient debug.
+
+## 5. UE 5.7 API Notes (upgraded from 5.2)
+
+- `FOverlapResult`: include `Engine/OverlapResult.h` when calling methods on overlap results (forward declare is insufficient in 5.7).
+- `FGameplayAbilitySpec`: use `GetDynamicSpecSourceTags()` instead of deprecated `DynamicAbilityTags`.
+- `FAuraGameplayEffectContext`: `GetScriptStruct()` must return `FAuraGameplayEffectContext::StaticStruct()`; `Duplicate()` must allocate `FAuraGameplayEffectContext`.
+- Do not put `FGameplayEffectSpec` in `UFUNCTION(Client, Reliable)` RPCs — pass `FGameplayTagContainer` or other lightweight types.
+- `AActor::NetUpdateFrequency`: prefer `SetNetUpdateFrequency()` / `GetNetUpdateFrequency()` over direct member access.
+- `UAbilitySystemGlobals::InitGlobalData()` is called automatically from 5.3+; keep the call in `UAuraAssetManager` for clarity but it is not the 5.2-era manual requirement.
+
+## 6. Gameplay Ability System (GAS)
+
+- Attribute setters/getters: use `ATTRIBUTE_ACCESSORS` or GAS macros from `AttributeSet.h`.
+- Always declare `FGameplayAttributeData` with `ReplicatedUsing = OnRep_<Name>` and `GAMEPLAYATTRIBUTE_REPNOTIFY` in `OnRep_<Name>`.
+- Register replicated attributes in `GetLifetimeReplicatedProps` with `DOREPLIFETIME_CONDITION_NOTIFY(..., COND_None, REPNOTIFY_Always)`.
+- New attributes must be added to `UAuraAttributeSet` and surfaced through `AttributeInfo` data assets for the UI menu.
+- Gameplay Abilities inherit from `UAuraGameplayAbility`. Projectile spells inherit from `UAuraProjectileSpell`.
+- Gameplay Effects: prefer Blueprint authoring under `Content/Blueprints/AbilitySystem/GameplayEffects/`.
+- Use `FGameplayTag` everywhere. Native tags in `AuraGameplayTags.h/.cpp` via `FAuraGameplayTags::InitializeNativeGameplayTags()`.
+- Ability tasks live under `AbilitySystem/AbilityTasks/`. Follow the `TargetDataUnderMouse` pattern.
+
+## 7. Enhanced Input
+
+- Input is driven by `IA_*` + `IMC_AuraContext` + `DA_AuraInputConfig`.
+- Bindings happen in `UAuraInputComponent::BindAbilityActions(...)` — do not add per-action `BindAction` in the PlayerController.
+
+## 8. UI (WidgetController pattern)
+
+- Widgets (`UAuraUserWidget` and children) are **passive** — they never read game state directly.
+- WidgetControllers sit between widget and model; widgets bind to controller delegates only.
+
+## 9. Combat / Interfaces
+
+- Cross-class combat goes through `ICombatInterface` and `IEnemyInterface`.
+- Implement interfaces rather than `Cast<>` to concrete enemy/player types.
+
+## 10. Replication & Networking
+
+- `AbilitySystemComponent` on `APlayerState` for player, on pawn for `AEnemy`.
+- Default spell policy: `LocalPredicted`. Use `WaitTargetData` / `TargetDataUnderMouse` for targeting.
+- Replicated UPROPERTYs need `Replicated` (or `ReplicatedUsing=`) plus `DOREPLIFETIME`.
+
+## 11. Assets & Async Loading
+
+- Custom asset manager: `UAuraAssetManager` (set in `Config/DefaultEngine.ini`).
+- Native gameplay tags bootstrapped in `UAuraAssetManager::StartInitialLoading()`.
+- Prefer `UDataAsset` subclasses with `TObjectPtr<>` rather than hard string paths.
+
+## 12. Niagara / VFX
+
+- Niagara only — no Cascade. Trigger hit VFX via `GameplayCue` when possible.
+
+## 13. What NOT to Do
+
+- Do NOT use `ue-mcp` / third-party UE MCP — UEC (`uecp-aura`) is the editor bridge.
+- Do NOT add Blueprint-only logic in C++ without `UFUNCTION(BlueprintCallable/BlueprintImplementableEvent)`.
+- Do NOT use `TWeakObjectPtr` for normal owning references.
+- Do NOT spawn projectiles via raw `SpawnActor` from abilities — use `UAuraProjectileSpell::SpawnProjectile`.
+- Do NOT hardcode key bindings — use `IMC_AuraContext` + `DA_AuraInputConfig`.
+- Do NOT include private GAS module headers; use public headers only.
+
+## 14. When in Doubt
+
+- Read the closest existing class first and mirror its style.
+- For GAS: defer to `AuraAttributeSet.cpp`, `AuraAbilitySystemComponent.cpp`, `AuraProjectileSpell.cpp`.
+- For UI: defer to `OverlayWidgetController.cpp` / `AttributeMenuWidgetController.cpp`.
+
+## 15. Local Documentation Reference
+
+- GAS: `.docs/GAS-Tranek-Documentation.md` (Tranek GASDocumentation).
+- Epic UE docs: Cursor Indexing & Docs → `https://dev.epicgames.com/documentation/en-us/unreal-engine/`.
+- For UE 5.7 API behavior, defer to `Source/Aura/` patterns first, then Epic 5.7 docs.

@@ -1,0 +1,17 @@
+---
+description: Briefly credit Skills used in each reply
+alwaysApply: true
+---
+
+# Skill 引用（回答习惯）
+
+在本轮回复中，若你**实际读取并遵循**了任意 Agent Skill（`SKILL.md`），在回答**末尾**用一行简短注明，例如：
+
+> 参考 Skill：`ue-gameplay-abilities`、`ue5-study-assistant`
+
+规则：
+
+- 只列出**本轮确实读过正文**的 Skill，用 frontmatter 里的 `name`（反引号包裹）。
+- **未使用任何 Skill** 时不写这一句，也不要写「未使用 Skill」。
+- 一行即可，不要展开 Skill 内容，不要喧宾夺主。
+- **不要**把 Project Rules（`.cursor/rules/*.mdc`）、User Rules、MCP 工具写进这行，除非用户明确问「用了什么规则/工具」。

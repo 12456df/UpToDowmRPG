@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.2",
+	"EngineAssociation": "{2FDF9238-4EA5-3C5A-DBBB-79AA37268A9C}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -37,6 +37,11 @@
 		{
 			"Name": "MotionWarping",
 			"Enabled": true
+		},
+		{
+			"Name": "BpGeneratorUltimate",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/Fab/product/8d776721-5da3-44ce-b7ef-be17a023be59"
 		}
 	]
 }

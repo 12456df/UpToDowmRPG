@@ -7,7 +7,7 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAttributeSet.generated.h"
 
-// UE 5.2 引擎不再预定义此宏，需在项目中自行定义
+// Older UE versions did not predefine ATTRIBUTE_ACCESSORS; keep project macro for compatibility.
 #define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \

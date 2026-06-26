@@ -23,7 +23,7 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/tranek/GASDocumentation
 
 - Files in this folder are deliberately NOT excluded by `.cursorignore`, so
   they participate in normal codebase indexing.
-- Unreal Engine 5.2 official HTML docs are not mirrored here; they require a
-  JS-rendering crawler. Use Cursor `Settings -> Indexing & Docs -> Add Doc`
-  with prefix `https://dev.epicgames.com/documentation/en-us/unreal-engine/`
+- Epic UE 5.7 official HTML docs are not mirrored here. Use Cursor
+  `Settings -> Indexing & Docs -> Add Doc` with prefix
+  `https://dev.epicgames.com/documentation/en-us/unreal-engine/`
   if you want them.

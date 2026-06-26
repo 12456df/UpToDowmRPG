@@ -15,7 +15,7 @@ struct FTaggedMontage
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UAnimMontage* Montage;
+	UAnimMontage* Montage = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag MontageTag;
