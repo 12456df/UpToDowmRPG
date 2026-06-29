@@ -1,5 +1,4 @@
 
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -16,6 +15,8 @@ class AURA_API AAuraGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
+	AAuraGameModeBase();
+
 	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
 	TObjectPtr<UCharacterClassInfo> CharacterClassInfo;
 	

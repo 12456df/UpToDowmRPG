@@ -1,7 +1,7 @@
 # UE Project Context — Aura
 
-*Last updated: 2026-06-25*  
-*对齐提交：`a9c6cb0`（`upgrade/ue5.7`）*
+*Last updated: 2026-06-26*  
+*对齐提交：`f0a7d8f`（`main`）*
 
 ## Engine & Project Overview
 
@@ -117,6 +117,6 @@
 
 **Source control:** Git（`e:\Unreal Projects\Aura`）
 
-**Branching:** `upgrade/ue5.7` 为当前工作分支；`backup/pre-ue5.7` 保留升级前快照
+**Branching:** `main` 为当前主分支（已含 UE 5.7）；`backup/pre-ue5.7` 保留升级前快照
 
 **AI SSOT 入口:** 仓库根目录 `AGENTS.md`

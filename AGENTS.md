@@ -3,8 +3,8 @@
 > **所有 AI 工具（Cursor、Hermes、UEC）应优先读本文件，再按需展开链接文档。**
 > 事实变更时：先改这里或 `.agents/ue-project-context.md`，再同步到各工具侧配置。
 
-*最后更新：2026-06-25*  
-*对齐提交：`a9c6cb0`（`upgrade/ue5.7`）*
+*最后更新：2026-06-26*  
+*对齐提交：`f0a7d8f`（`main`）*
 
 ---
 
@@ -16,6 +16,7 @@
 | **项目事实** | `.agents/ue-project-context.md` | 引擎版本、模块、插件、关键类名、GAS 架构 | 升级/大改后更新 |
 | **编码规范** | `.cursor/rules/aura-ue57.mdc` | Cursor 写 C++ 时的强制约定 | 规范变更时改 |
 | **回答习惯** | `.cursor/rules/skill-attribution.mdc` | 用过 Skill 时在末尾标注 | 一般不动 |
+| **SSOT 维护** | `.cursor/skills/aura-ssot-maintenance/` | 按对齐提交增量更新 SSOT | 里程碑后 |
 | **参考手册** | `.docs/GAS-Tranek-Documentation.md` | 第三方 GAS 百科（只读参考） | 偶尔 `Invoke-WebRequest` 刷新 |
 | **源码** | `Source/Aura/` | 最终实现真相 | 正常开发 |
 | **UEC 记忆** | UEC 面板 GDD / Memory | 编辑器内 AI 的简短摘要 | **从本仓库 SSOT 复制粘贴**，勿当主库 |
@@ -62,13 +63,16 @@
 - **战斗接口**：`ICombatInterface`、`IEnemyInterface`
 - **编辑器自动化**：BpGeneratorUltimate（UEC 生态）
 
+**C++ 编码规范（Cursor / Hermes 写代码前请 read）：** `.cursor/rules/aura-ue57.mdc`
+
 ---
 
 ## 5. 分支与备份
 
 | 项 | 值 |
 |----|-----|
-| 当前工作分支 | `upgrade/ue5.7` |
+| 当前主分支 | `main`（已合并 UE 5.7） |
+| 升级用分支 | `upgrade/ue5.7`（可与 main 同步） |
 | 升级前备份分支 | `backup/pre-ue5.7` |
 | 升级前标签 | `backup/pre-ue5.7-2026-06-25` |
 | 文件夹备份 | `e:\Unreal Projects\Aura_backup_pre-ue5.7_2026-06-25` |
