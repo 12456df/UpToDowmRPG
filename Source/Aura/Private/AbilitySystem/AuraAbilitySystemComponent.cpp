@@ -5,6 +5,8 @@
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AuraGameplayTags.h"
 #include "Aura/AuraLogChannels.h"
+#include "Interaction/PlayerInterface.h"
+#include "AbilitySystemBlueprintLibrary.h"
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
 	OnGameplayEffectAppliedDelegateToSelf.AddUObject(this, &UAuraAbilitySystemComponent::EffectApplied);
@@ -131,4 +133,36 @@ FGameplayTag UAuraAbilitySystemComponent::GetInputTagFromSpec(const FGameplayAbi
         }
     }
     return FGameplayTag();
+}
+
+void UAuraAbilitySystemComponent::UpgradeAttribute(const FGameplayTag& AttributeTag)
+{
+	if (GetAvatarActor()->Implements<UPlayerInterface>())
+	{
+		if (IPlayerInterface::Execute_GetAttributePoints(GetAvatarActor()) > 0)
+		{
+			ServerUpgradeAttribute(AttributeTag);
+		}
+	}
+}
+
+void UAuraAbilitySystemComponent::ServerUpgradeAttribute_Implementation(const FGameplayTag& AttributeTag)
+{
+	FGameplayEventData Payload;
+	Payload.EventTag = AttributeTag;
+	Payload.EventMagnitude = 1.f;
+
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetAvatarActor(), AttributeTag, Payload);
+    /*
+    SendGameplayEventToActor(GetAvatarActor(), AttributeTag, Payload) 会：
+        找到 Avatar（Character）对应的 ASC（玩家 ASC 在 PlayerState 上，通过 IAbilitySystemInterface 拿到）
+        在该 ASC 上调用 HandleGameplayEvent(AttributeTag, Payload)
+        所有正在 Wait Gameplay Event、且 Tag 匹配的 AbilityTask 收到事件，触发 Event Received
+    
+    */
+
+	if (GetAvatarActor()->Implements<UPlayerInterface>())
+	{
+		IPlayerInterface::Execute_AddToAttributePoints(GetAvatarActor(), -1);
+	}
 }

@@ -24,6 +24,8 @@ void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION_NOTIFY(AAuraPlayerState, Level, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(AAuraPlayerState, XP, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(AAuraPlayerState, AttributePoints, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(AAuraPlayerState, SpellPoints, COND_None, REPNOTIFY_Always);
 }
 void AAuraPlayerState::OnRep_Level(int32 OldLevel)
 {
@@ -61,4 +63,41 @@ int32 AAuraPlayerState::AddToXP(int32 XPToAdd)
 void AAuraPlayerState::OnRep_XP(int32 OldXP)
 {
 	OnXPChanged.Broadcast(XP);
+}
+
+void AAuraPlayerState::SetAttributePoints(int32 NewAttributePoints)
+{
+	if(!HasAuthority())return;
+	AttributePoints = NewAttributePoints;
+	OnAttributePointsChanged.Broadcast(AttributePoints);
+}
+int32 AAuraPlayerState::AddToAttributePoints(int32 AttributePointsToAdd)
+{
+	if(!HasAuthority())return 0;
+	AttributePoints += AttributePointsToAdd;
+	OnAttributePointsChanged.Broadcast(AttributePoints);
+	return AttributePoints;
+}
+void AAuraPlayerState::OnRep_AttributePoints(int32 OldAttributePoints)
+{
+	OnAttributePointsChanged.Broadcast(AttributePoints);
+}
+
+
+void AAuraPlayerState::SetSpellPoints(int32 NewSpellPoints)
+{
+	if(!HasAuthority())return;
+	SpellPoints = NewSpellPoints;
+	OnSpellPointsChanged.Broadcast(SpellPoints);
+}
+int32 AAuraPlayerState::AddToSpellPoints(int32 SpellPointsToAdd)
+{
+	if(!HasAuthority())return 0;
+	SpellPoints += SpellPointsToAdd;
+	OnSpellPointsChanged.Broadcast(SpellPoints);
+	return SpellPoints;
+}
+void AAuraPlayerState::OnRep_SpellPoints(int32 OldSpellPoints)
+{
+	OnSpellPointsChanged.Broadcast(SpellPoints);
 }

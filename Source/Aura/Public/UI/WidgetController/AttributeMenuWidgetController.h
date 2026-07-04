@@ -13,6 +13,7 @@ class UAttributeInfo;//DataAsset
 struct FAuraAttributeInfo;
 struct FGameplayAttribute;
 struct FGameplayTag;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributeInfoDelegate, const FAuraAttributeInfo&, AttributeInfo);
 
 UCLASS(BlueprintType, Blueprintable)
@@ -22,9 +23,14 @@ class AURA_API UAttributeMenuWidgetController : public UAuraWidgetController
 public:
 	virtual void BroadcastInitialValues() override;
 	virtual void BindCallbacksToDependencies() override;
+	UFUNCTION(BlueprintCallable)
+	void UpgradeAttribute(const FGameplayTag& AttributeTag);
 
 	UPROPERTY(BlueprintAssignable)
 	FAttributeInfoDelegate AttributeInfoDelegate;
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerStatChangedSignature AttributePointsChangedDelegate;
+
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UAttributeInfo> AttributeInfo;
@@ -32,4 +38,5 @@ protected:
 private:
 
 	void BroadcastAttributeInfo(const FGameplayAttribute& Attribute, const FGameplayTag& AttributeTag) const;
+	void OnAttributePointsChanged(int32 AttributePoints);
 };

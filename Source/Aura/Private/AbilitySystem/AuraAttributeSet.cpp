@@ -190,9 +190,9 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				IPlayerInterface::Execute_AddToSpellPoints(Props.SourceCharacter, SpellPointsReward);
 				
 				//重置生命值和法力值
-				SetHealth(GetMaxHealth());
-				SetMana(GetMaxMana());
-				
+				bTopOffHealth = true;
+				bTopOffMana = true;
+					
 				IPlayerInterface::Execute_LevelUp(Props.SourceCharacter);
 			}
 			//最后再改变总经验值
@@ -201,6 +201,22 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	}
 }
 
+
+void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute,float OldValue,float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+
+	if (Attribute == GetMaxHealthAttribute() && bTopOffHealth)
+	{
+		SetHealth(GetMaxHealth());
+		bTopOffHealth = false;
+	}
+	if (Attribute == GetMaxManaAttribute() && bTopOffMana)
+	{
+		SetMana(GetMaxMana());
+		bTopOffMana = false;
+	}
+}
 void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& Props, float Damage, bool bIsBlockedHit, bool bIsCriticalHit) const
 {
 	if (Props.SourceCharacter != Props.TargetCharacter)
