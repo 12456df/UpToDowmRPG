@@ -56,6 +56,14 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
     AbilityGivenDelegate.Broadcast(this);
 }
 
+void UAuraAbilitySystemComponent::AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassiveAbilities)
+{
+    for (const TSubclassOf<UGameplayAbility> AbilityClass : StartupPassiveAbilities)
+    {
+        FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
+        GiveAbilityAndActivateOnce(AbilitySpec);
+    }
+}
 void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
 {
     if(!InputTag.IsValid()) return;
@@ -99,7 +107,7 @@ FGameplayTag UAuraAbilitySystemComponent::GetAbilityTagFromSpec(const FGameplayA
 {
     if (AbilitySpec.Ability)
     {
-        for(const FGameplayTag& Tag : AbilitySpec.Ability->AbilityTags)
+        for (const FGameplayTag& Tag : AbilitySpec.Ability->GetAssetTags())
         {
             if(Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Abilities"))))
             {
@@ -114,7 +122,7 @@ FGameplayTag UAuraAbilitySystemComponent::GetInputTagFromSpec(const FGameplayAbi
 {
     if (AbilitySpec.Ability)
     {
-        for(const FGameplayTag& Tag : AbilitySpec.DynamicAbilityTags)
+        for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
         {
             if(Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("InputTag"))))
             {

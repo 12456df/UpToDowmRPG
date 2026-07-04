@@ -59,6 +59,11 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
     GameplayTags.Attribute_Resistance_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Attribute.Resistance.Physical"),FString("Physical Resistance"));
 
     /*
+    * Meta Tags
+    */
+    GameplayTags.Attribute_Meta_IncomingXP = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Attribute.Meta.IncomingXP"), FString("Incoming XP"));
+    
+    /*
     * Damage Types to Resistances
     */
     GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Fire, GameplayTags.Attribute_Resistance_Fire);

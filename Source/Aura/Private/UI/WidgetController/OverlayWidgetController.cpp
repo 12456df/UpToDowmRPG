@@ -6,6 +6,8 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Data/AbilityInfo.h"
+#include "Player/AuraPlayerState.h"
+#include "AbilitySystem/Data/LevelUpInfo.h"
 //初始化
 void UOverlayWidgetController::BroadcastInitialValues(){
 	Super::BroadcastInitialValues();
@@ -13,7 +15,7 @@ void UOverlayWidgetController::BroadcastInitialValues(){
     OnHealthChanged.Broadcast(AuraAttributeSet->GetHealth());
     OnMaxHealthChanged.Broadcast(AuraAttributeSet->GetMaxHealth());
     OnManaChanged.Broadcast(AuraAttributeSet->GetMana());
-    OnMaxManaChanged.Broadcast(AuraAttributeSet->GetMaxMana());
+    OnMaxManaChanged.Broadcast(AuraAttributeSet->GetMaxMana());  
 }
 
 //检测属性变化
@@ -54,6 +56,16 @@ void UOverlayWidgetController::BindCallbacksToDependencies(){
         [this](const FOnAttributeChangeData& Data)
         {
             OnMaxManaChanged.Broadcast(Data.NewValue);
+        }
+    );
+
+    AAuraPlayerState* AuraPlayerState = CastChecked<AAuraPlayerState>(PlayerState);
+    AuraPlayerState->OnXPChanged.AddUObject(this, &UOverlayWidgetController::OnXPChanged);
+
+    AuraPlayerState->OnLevelChanged.AddLambda(
+        [this](int32 NewLevel)
+        {
+            OnPlayerLevelChangedDelegate.Broadcast(NewLevel);
         }
     );
 
@@ -104,4 +116,20 @@ void UOverlayWidgetController::OnInitializeStartupAbilities(UAuraAbilitySystemCo
         }
     );
     AuraAbilitySystemComponent->ForEachAbility(ForEachAbilityDelegate);
+}
+
+void UOverlayWidgetController::OnXPChanged(int32 NewXP) const
+{
+    AAuraPlayerState* AuraPlayerState = CastChecked<AAuraPlayerState>(PlayerState);
+    ULevelUpInfo* LevelUpInfo = AuraPlayerState->LevelUpInfo;
+    if(!LevelUpInfo) return;
+
+    int32 CurrentLevel = FMath::Clamp(LevelUpInfo->FindLevelForXP(NewXP), 1, LevelUpInfo->LevelUpInformation.Num() - 1);
+
+    int32 CurrentLevelXP = LevelUpInfo->LevelUpInformation[CurrentLevel].LevelUpRequirement - LevelUpInfo->LevelUpInformation[CurrentLevel - 1].LevelUpRequirement;
+    if(CurrentLevelXP <= 0) return;
+        
+    int32 XPForCurrentLevel = NewXP - LevelUpInfo->LevelUpInformation[CurrentLevel - 1].LevelUpRequirement;
+
+    OnXPPercentChangedDelegate.Broadcast(FMath::Clamp(static_cast<float>(XPForCurrentLevel) / static_cast<float>(CurrentLevelXP), 0.f, 1.f));
 }
