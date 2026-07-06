@@ -19,25 +19,21 @@ void UAttributeMenuWidgetController::BroadcastAttributeInfo(const FGameplayAttri
 void UAttributeMenuWidgetController::BroadcastInitialValues(){
 	Super::BroadcastInitialValues();
 
-	UAuraAttributeSet* AS = CastChecked<UAuraAttributeSet>(AttributeSet);
-	
 	check(AttributeInfo);
 
-	for (auto& Pair : AS->TagsToAttributes)
+	for (auto& Pair : GetAuraAS()->TagsToAttributes)
 	{
 		BroadcastAttributeInfo(Pair.Value(), Pair.Key);
 	}
 
-	AAuraPlayerState* AuraPlayerState = CastChecked<AAuraPlayerState>(PlayerState);
-	AttributePointsChangedDelegate.Broadcast(AuraPlayerState->GetAttributePoints());
+	AttributePointsChangedDelegate.Broadcast(GetAuraPS()->GetAttributePoints());
    
 }
 
 void UAttributeMenuWidgetController::BindCallbacksToDependencies(){
 	Super::BindCallbacksToDependencies();
 
-	UAuraAttributeSet* AS = CastChecked<UAuraAttributeSet>(AttributeSet);
-	for (auto& Pair : AS->TagsToAttributes)
+	for (auto& Pair : GetAuraAS()->TagsToAttributes)
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value()).AddLambda
 		([this, Pair](const FOnAttributeChangeData& Data)
@@ -46,8 +42,7 @@ void UAttributeMenuWidgetController::BindCallbacksToDependencies(){
 		});
 	}
 
-	AAuraPlayerState* AuraPlayerState = CastChecked<AAuraPlayerState>(PlayerState);
-	AuraPlayerState->OnAttributePointsChanged.AddUObject(this, &UAttributeMenuWidgetController::OnAttributePointsChanged);
+	GetAuraPS()->OnAttributePointsChanged.AddUObject(this, &UAttributeMenuWidgetController::OnAttributePointsChanged);
 
 }
 

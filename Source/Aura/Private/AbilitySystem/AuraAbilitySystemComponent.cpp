@@ -18,7 +18,7 @@ void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
 	if(!bStartupAbilitiesGiven)
 	{
         bStartupAbilitiesGiven = true;
-		AbilityGivenDelegate.Broadcast(this);
+		AbilityGivenDelegate.Broadcast();
 	}
 }
 
@@ -55,7 +55,7 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
         }
     }
     bStartupAbilitiesGiven = true;
-    AbilityGivenDelegate.Broadcast(this);
+    AbilityGivenDelegate.Broadcast();
 }
 
 void UAuraAbilitySystemComponent::AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassiveAbilities)
