@@ -19,10 +19,12 @@ void UAuraWidgetController::SetWidgetControllerParams(const FWidgetControllerPar
 
 void UAuraWidgetController::BroadcastInitialValues()
 {
+	
 }
 
 void UAuraWidgetController::BindCallbacksToDependencies()
 {
+
 }
 
 void UAuraWidgetController::BroadcastAbilityInfo()
@@ -34,6 +36,7 @@ void UAuraWidgetController::BroadcastAbilityInfo()
 	{
 		FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfoForTag(AuraAbilitySystemComponent->GetAbilityTagFromSpec(AbilitySpec));
 		Info.InputTag = AuraAbilitySystemComponent->GetInputTagFromSpec(AbilitySpec);
+		Info.StatusTag = AuraAbilitySystemComponent->GetStatusFromSpec(AbilitySpec);
 		AbilityInfoDelegate.Broadcast(Info);
 	});
 	GetAuraASC()->ForEachAbility(BroadcastDelegate);

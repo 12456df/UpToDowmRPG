@@ -39,6 +39,7 @@ $RECYCLE.BIN/
 .idea/
 .vscode/
 *.code-workspace
+.cursor/chat-restore-backups/
 
 # Rider
 .idea/
