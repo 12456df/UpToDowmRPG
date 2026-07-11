@@ -1,24 +1,19 @@
 
 
 
-
 #include "Actor/AuraProjectile.h"
-
-
 
 #include "NiagaraFunctionLibrary.h"
 #include "Components/AudioComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/PlayerState.h"
 #include "Aura/Aura.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
 AAuraProjectile::AAuraProjectile()
-
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
@@ -39,7 +34,6 @@ AAuraProjectile::AAuraProjectile()
 }
 
 void AAuraProjectile::BeginPlay()
-
 {
 	Super::BeginPlay();
 	SetLifeSpan(LifeSpan);
@@ -47,52 +41,64 @@ void AAuraProjectile::BeginPlay()
 	LoopingSoundComponent = UGameplayStatics::SpawnSoundAttached(LoopingSound, GetRootComponent());
 }
 
-
+void AAuraProjectile::OnHit()
+{
+	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
+	if (LoopingSoundComponent)
+	{
+		LoopingSoundComponent->Stop();
+	}
+	bHit = true;
+}
 
 void AAuraProjectile::Destroyed()
-
 {
 	if (!bHit && !HasAuthority())
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
-		if (LoopingSoundComponent)
-		{
-			LoopingSoundComponent->Stop();
-		}
+		OnHit();
 	}
 	Super::Destroyed();
 }
 
-
 void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-
 {
-	//TODO: Ask why this is needed
-	if (!DamageEffectSpecHandle.Data.IsValid() || DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
+	if (!DamageEffectParams.SourceAbilitySystemComponent)
 	{
 		return;
 	}
-	if (!UAuraAbilitySystemLibrary::IsNotFriend(DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser(), OtherActor))
+
+	AActor* SourceAvatarActor = DamageEffectParams.SourceAbilitySystemComponent->GetAvatarActor();
+	if (SourceAvatarActor == OtherActor)
 	{
 		return;
 	}
-	if(!bHit)
+	if (!UAuraAbilitySystemLibrary::IsNotFriend(SourceAvatarActor, OtherActor))
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
-		if (LoopingSoundComponent)
-		{
-			LoopingSoundComponent->Stop();
-		}
+		return;
 	}
-	
+	if (!bHit)
+	{
+		OnHit();
+	}
+
 	if (HasAuthority())
 	{
-
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 		{
-			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data.Get());
+			const FVector DeathImpulse = GetActorForwardVector() * DamageEffectParams.DeathImpulseMagnitude;
+			DamageEffectParams.DeathImpulse = DeathImpulse;
+			const bool bKnockback = FMath::RandRange(1, 100) < DamageEffectParams.KnockbackChance;
+			if (bKnockback)
+			{
+				FRotator Rotation = GetActorRotation();
+				Rotation.Pitch = 45.f;
+				const FVector KnockbackDirection = Rotation.Vector();
+				const FVector KnockbackForce = KnockbackDirection * DamageEffectParams.KnockbackForceMagnitude;
+				DamageEffectParams.KnockbackForce = KnockbackForce;
+			}
+			DamageEffectParams.TargetAbilitySystemComponent = TargetASC;
+			UAuraAbilitySystemLibrary::ApplyDamageEffect(DamageEffectParams);
 		}
 		Destroy();
 	}
@@ -101,35 +107,3 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 		bHit = true;
 	}
 }
-
-
-
-
-/*
-Q1：LoopingSoundComponent->Stop() 空指针崩溃
-A1：弹丸生成位置错误（问题 1 导致），一出生就和发射者碰撞，
-OnSphereOverlap 在 BeginPlay 的 SpawnSoundAttached 还没完成时就被触发，
-组件还是 null 就调了 Stop()。
-S1：调用前判空（兜底保护）。
-
-
-Q2：火球撞到自己消失，飞不出去
-A2：用 GetOwner() 反查真正的发射者角色，与生成位置无关：
-S2：AActor* SourceAvatar = GetOwner();                       // 敌人：owner 就是角色
-if (const APlayerState* PS = Cast<APlayerState>(GetOwner()))
-{
-    SourceAvatar = PS->GetPawn();                         // 玩家：owner 是 PlayerState，取其 Pawn
-}
-if (OtherActor == SourceAvatar) return;
-*/
-
-
-
-
-
-
-
-
-
-
-

@@ -8,8 +8,12 @@
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "CombatInterface.generated.h"
 
+class UAbilitySystemComponent;
 class UAnimMontage;
 class UNiagaraSystem;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnASCRegistered, UAbilitySystemComponent*);
+
 USTRUCT(BlueprintType)
 struct FTaggedMontage
 {
@@ -62,7 +66,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	AActor* GetCombatTarget();
 
-	virtual void Die() = 0;
+	virtual void Die(const FVector& DeathImpulse) = 0;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;
@@ -87,4 +91,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	ECharacterClass GetCharacterClass();
+
+	/** Return by ref so listeners bind to the owner's delegate, not a temporary copy. */
+	virtual FOnASCRegistered& GetOnASCRegisteredDelegate() = 0;
 };

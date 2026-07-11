@@ -1,0 +1,21 @@
+﻿CompileFlags:
+  Compiler: C:/Program Files/LLVM/bin/clang-cl.exe
+  Add:
+    - /std:c++20
+    - /Zc:preprocessor
+    - /clang:-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH
+    - /clang:-Wno-everything
+    - /clang:-ferror-limit=0
+  Remove:
+    - /std:c++14
+    - -std=c++14
+    - /std:c++17
+    - -std=c++17
+    - /W*
+    - /O*
+    - /MP*
+    - /experimental:*
+Diagnostics:
+  Suppress: "*"
+Index:
+  Background: Build
