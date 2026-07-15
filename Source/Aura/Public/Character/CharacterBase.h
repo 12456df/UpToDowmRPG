@@ -17,6 +17,7 @@ class UGameplayAbility;
 class UAnimMontage;
 class UNiagaraSystem;
 class UDebuffNiagaraComponent;
+class UPassiveNiagaraComponent;
 UCLASS(Abstract)
 class AURA_API ACharacterBase : public ACharacter, public IAbilitySystemInterface,public ICombatInterface
 {
@@ -24,6 +25,7 @@ class AURA_API ACharacterBase : public ACharacter, public IAbilitySystemInterfac
 
 public:
 	ACharacterBase();
+	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSet* GetAttributeSet() const{return AttributeSet;};
@@ -154,6 +156,18 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UDebuffNiagaraComponent> StunDebuffComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPassiveNiagaraComponent> HaloOfProtectionNiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPassiveNiagaraComponent> LifeSiphonNiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPassiveNiagaraComponent> ManaSiphonNiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> EffectAttachComponent;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Abilities")
