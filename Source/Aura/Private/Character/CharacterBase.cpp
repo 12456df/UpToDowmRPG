@@ -14,6 +14,8 @@
 #include "AuraGameplayTags.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 ACharacterBase::ACharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -22,6 +24,10 @@ ACharacterBase::ACharacterBase()
 	BurnDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>(TEXT("BurnDebuffComponent"));
 	BurnDebuffComponent->SetupAttachment(GetRootComponent());
 	BurnDebuffComponent->DebuffTag = GameplayTags.Debuff_Burn;
+
+	StunDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>(TEXT("StunDebuffComponent"));
+	StunDebuffComponent->SetupAttachment(GetRootComponent());
+	StunDebuffComponent->DebuffTag = GameplayTags.Debuff_Stun;
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
@@ -36,6 +42,15 @@ ACharacterBase::ACharacterBase()
 	//Weapon->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
 
+}
+
+void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACharacterBase, bIsStunned);
+	DOREPLIFETIME(ACharacterBase, bIsBurned);
+	DOREPLIFETIME(ACharacterBase, bIsBeingShocked);
 }
 
 void ACharacterBase::BeginPlay()
@@ -57,6 +72,11 @@ void ACharacterBase::Die(const FVector& DeathImpulse)
 	MulticastHandleDeath(DeathImpulse);
 }
 
+FOnDeathSignature& ACharacterBase::GetOnDeathDelegate()
+{
+	return OnDeathDelegate;
+}
+
 void ACharacterBase::MulticastHandleDeath_Implementation(const FVector& DeathImpulse)
 {
 	UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
@@ -74,6 +94,22 @@ void ACharacterBase::MulticastHandleDeath_Implementation(const FVector& DeathImp
 	Dissolve();
 	bDead = true;
 	BurnDebuffComponent->Deactivate();
+	StunDebuffComponent->Deactivate();
+	OnDeathDelegate.Broadcast(this);
+}
+
+void ACharacterBase::StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	bIsStunned = NewCount > 0;
+	GetCharacterMovement()->MaxWalkSpeed = bIsStunned ? 0.f : BaseWalkSpeed;
+}
+
+void ACharacterBase::OnRep_Stunned()
+{
+}
+
+void ACharacterBase::OnRep_Burned()
+{
 }
 
 void ACharacterBase::ApplyEffectToSelf(const TSubclassOf<UGameplayEffect> GameplayEffectClass, const float Level) const
@@ -172,6 +208,21 @@ ECharacterClass ACharacterBase::GetCharacterClass_Implementation()
 FOnASCRegistered& ACharacterBase::GetOnASCRegisteredDelegate()
 {
 	return OnAscRegistered;
+}
+
+USkeletalMeshComponent* ACharacterBase::GetWeapon_Implementation()
+{
+	return Weapon;
+}
+
+void ACharacterBase::SetIsBeingShocked_Implementation(bool bInShock)
+{
+	bIsBeingShocked = bInShock;
+}
+
+bool ACharacterBase::IsBeingShocked_Implementation() const
+{
+	return bIsBeingShocked;
 }
 
 void ACharacterBase::AddCharacterAbilities()

@@ -10,6 +10,9 @@
 class UNiagaraSystem;
 class USphereComponent;
 class UProjectileMovementComponent;
+class USceneComponent;
+class UAudioComponent;
+class USoundBase;
 UCLASS()
 class AURA_API AAuraProjectile : public AActor
 {
@@ -24,6 +27,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	FDamageEffectParams DamageEffectParams;
+
+	UPROPERTY()
+	TObjectPtr<USceneComponent> HomingTargetSceneComponent;
 
 protected:
 	

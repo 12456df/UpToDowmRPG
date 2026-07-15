@@ -17,6 +17,7 @@
 #include "Aura/AuraLogChannels.h"
 #include "Interaction/PlayerInterface.h"
 #include "GameplayEffect.h"
+#include "GameplayEffectComponents/TargetTagsGameplayEffectComponent.h"
 
 UAuraAttributeSet::UAuraAttributeSet()
 {
@@ -175,9 +176,12 @@ void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 		}
 		else
 		{
-			FGameplayTagContainer TagContainer;
-			TagContainer.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
-			Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+			if (Props.TargetCharacter->Implements<UCombatInterface>() && !ICombatInterface::Execute_IsBeingShocked(Props.TargetCharacter))
+			{
+				FGameplayTagContainer TagContainer;
+				TagContainer.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
+				Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+			}
 
 			const FVector& KnockbackForce = UAuraAbilitySystemLibrary::GetKnockbackForce(Props.EffectContextHandle);
 			UE_LOG(LogAura, Warning, TEXT("Knockback | Target=%s | Force=%s | Size=%.2f | NearlyZero(1)=%d | ConstrainToPlane=%d"),
@@ -230,6 +234,19 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 
 	const FGameplayTag DebuffTag = GameplayTags.DamageTypesToDebuffs[DamageType];
 
+	// UE 5.3+: InheritableOwnedTagsContainer is deprecated; grant target tags via GE Component
+	UTargetTagsGameplayEffectComponent& TargetTagsComponent = Effect->FindOrAddComponent<UTargetTagsGameplayEffectComponent>();
+	FInheritedTagContainer InheritedTagContainer;
+	InheritedTagContainer.Added.AddTag(DebuffTag);
+	if (DebuffTag.MatchesTagExact(GameplayTags.Debuff_Stun))
+	{
+		InheritedTagContainer.Added.AddTag(GameplayTags.Player_Block_CursorTrace);
+		InheritedTagContainer.Added.AddTag(GameplayTags.Player_Block_InputHeld);
+		InheritedTagContainer.Added.AddTag(GameplayTags.Player_Block_InputPressed);
+		InheritedTagContainer.Added.AddTag(GameplayTags.Player_Block_InputReleased);
+	}
+	TargetTagsComponent.SetAndApplyTargetTagChanges(InheritedTagContainer);
+
 	// UE 5.7: StackingType/StackLimitCount will become private; no runtime Set* API yet (SetStackingType is editor-only).
 	PRAGMA_DISABLE_DEPRECATION_WARNINGS
 	Effect->StackingType = EGameplayEffectStackingType::AggregateBySource;
@@ -246,9 +263,6 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 
 	if (FGameplayEffectSpec* MutableSpec = new FGameplayEffectSpec(Effect, EffectContext, 1.f))
 	{
-		// UE 5.7: InheritableOwnedTagsContainer is deprecated; grant via Spec DynamicGrantedTags
-		MutableSpec->DynamicGrantedTags.AddTag(DebuffTag);
-
 		FAuraGameplayEffectContext* AuraContext = static_cast<FAuraGameplayEffectContext*>(MutableSpec->GetContext().Get());
 		TSharedPtr<FGameplayTag> DebuffDamageType = MakeShareable(new FGameplayTag(DamageType));
 		AuraContext->SetDamageType(DebuffDamageType);

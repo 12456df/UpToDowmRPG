@@ -46,8 +46,6 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	bool bHitReacting = false;
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	float BaseWalkSpeed = 300.f;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float LifeSpan = 5.f;
@@ -64,6 +62,7 @@ public:
 
 protected:
 	virtual void InitializeDefaultAttributes() const override;
+	virtual void StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount) override;
 
 	UPROPERTY(EditAnywhere, Category = "Highlighting")
 	TObjectPtr<UMaterialInterface> DefaultMaterial;

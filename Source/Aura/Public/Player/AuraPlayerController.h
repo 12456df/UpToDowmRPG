@@ -16,6 +16,7 @@ class UAuraInputConfig;
 class UAuraAbilitySystemComponent;
 class USplineComponent;
 class UDamageTextComponent;
+class UNiagaraSystem;
 /**
  * 
  */
@@ -29,6 +30,9 @@ public:
 	virtual void PlayerTick(float DeltaTime) override;
 	UFUNCTION(Client, Reliable)
 	void ShowDamageNumber(float DamageAmount, ACharacter* TargetCharacter, bool bIsBlockedHit, bool bIsCriticalHit);
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UNiagaraSystem> ClickNiagaraSystem;
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

@@ -24,6 +24,7 @@ class AURA_API ACharacterBase : public ACharacter, public IAbilitySystemInterfac
 
 public:
 	ACharacterBase();
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSet* GetAttributeSet() const{return AttributeSet;};
 	virtual void InitAbilityActorInfo();
@@ -34,6 +35,22 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TArray<FTaggedMontage> AttackMontages;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Stunned, BlueprintReadOnly)
+	bool bIsStunned = false;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Burned, BlueprintReadOnly)
+	bool bIsBurned = false;
+
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	bool bIsBeingShocked = false;
+
+	UFUNCTION()
+	virtual void OnRep_Stunned();
+
+	UFUNCTION()
+	virtual void OnRep_Burned();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -53,6 +70,7 @@ protected:
 	FName TailSocketName;
 	/*Combat Interface*/
 	virtual void Die(const FVector& DeathImpulse) override;
+	virtual FOnDeathSignature& GetOnDeathDelegate() override;
 	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& SocketTag) override;
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
 	virtual bool IsDead_Implementation() const override;
@@ -64,9 +82,13 @@ protected:
 	virtual void IncremenetMinionCount_Implementation(int32 Amount) override;
 	virtual ECharacterClass GetCharacterClass_Implementation() override;
 	virtual FOnASCRegistered& GetOnASCRegisteredDelegate() override;
+	virtual USkeletalMeshComponent* GetWeapon_Implementation() override;
+	virtual void SetIsBeingShocked_Implementation(bool bInShock) override;
+	virtual bool IsBeingShocked_Implementation() const override;
 	/*end Combat Interface*/
 
 	FOnASCRegistered OnAscRegistered;
+	FOnDeathSignature OnDeathDelegate;
 
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
@@ -112,6 +134,11 @@ protected:
 
 	bool bDead = false;
 
+	virtual void StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	float BaseWalkSpeed = 600.f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UNiagaraSystem* BloodEffect;
 
@@ -124,6 +151,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UDebuffNiagaraComponent> BurnDebuffComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UDebuffNiagaraComponent> StunDebuffComponent;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Abilities")

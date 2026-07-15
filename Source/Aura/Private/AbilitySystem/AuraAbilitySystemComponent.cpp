@@ -69,6 +69,43 @@ void UAuraAbilitySystemComponent::AddCharacterPassiveAbilities(const TArray<TSub
         GiveAbilityAndActivateOnce(AbilitySpec);
     }
 }
+
+namespace
+{
+	FPredictionKey GetSpecActivationPredictionKey(const FGameplayAbilitySpec& AbilitySpec)
+	{
+		if (const UGameplayAbility* Instance = AbilitySpec.GetPrimaryInstance())
+		{
+			return Instance->GetCurrentActivationInfo().GetActivationPredictionKey();
+		}
+
+		const TArray<UGameplayAbility*>& Instances = AbilitySpec.GetAbilityInstances();
+		if (Instances.Num() > 0 && IsValid(Instances.Last()))
+		{
+			return Instances.Last()->GetCurrentActivationInfo().GetActivationPredictionKey();
+		}
+
+		return FPredictionKey();
+	}
+}
+
+void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid()) return;
+
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			AbilitySpecInputPressed(AbilitySpec);
+			if (AbilitySpec.IsActive())
+			{
+				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, AbilitySpec.Handle, GetSpecActivationPredictionKey(AbilitySpec));
+			}
+		}
+	}
+}
+
 void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
 {
     if(!InputTag.IsValid()) return;
@@ -89,9 +126,10 @@ void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
     if(!InputTag.IsValid()) return;
     for(FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
     {
-        if(AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+        if(AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag) && AbilitySpec.IsActive())
         {
             AbilitySpecInputReleased(AbilitySpec);
+        	InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, AbilitySpec.Handle, GetSpecActivationPredictionKey(AbilitySpec));
         }
     }
 }
