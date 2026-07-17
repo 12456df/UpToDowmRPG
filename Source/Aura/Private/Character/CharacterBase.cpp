@@ -71,6 +71,13 @@ void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ACharacterBase, bIsBeingShocked);
 }
 
+float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	const float DamageTaken = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	OnDamageDelegate.Broadcast(DamageTaken);
+	return DamageTaken;
+}
+
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -93,6 +100,11 @@ void ACharacterBase::Die(const FVector& DeathImpulse)
 FOnDeathSignature& ACharacterBase::GetOnDeathDelegate()
 {
 	return OnDeathDelegate;
+}
+
+FOnDamageSignature& ACharacterBase::GetOnDamageSignature()
+{
+	return OnDamageDelegate;
 }
 
 void ACharacterBase::MulticastHandleDeath_Implementation(const FVector& DeathImpulse)

@@ -121,7 +121,7 @@ void USpellMenuWidgetController::SpendPointButtonPressed()
 }
 
 void USpellMenuWidgetController::EquipButtonPressed()
-{
+ {
 	const FGameplayTag AbilityTypeTag = AbilityInfo->FindAbilityInfoForTag(SelectedAbility.Ability).AbilityType;
 	WaitForEquipDelegate.Broadcast(AbilityTypeTag);
 	bWaitForEquipSelection = true;
